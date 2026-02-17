@@ -11,7 +11,6 @@ function App() {
     <div className="app">
       <nav className="nav-bar">
         <div className="nav-brand">
-          <span className="nav-brand-icon" />
           Traffic Signal RL
         </div>
         <div className="nav-tabs">

@@ -59,37 +59,23 @@
 .nav-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 600;
-  color: #f5f5f7;
-  letter-spacing: -0.5px;
+  color: #ffffff;
+  letter-spacing: -0.6px;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  background: linear-gradient(135deg, #ffffff 0%, #e5e5e7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .nav-brand:hover {
-  color: #ffffff;
-}
-
-.nav-brand-icon {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #0a84ff, #0066cc);
-  box-shadow: 
-    0 0 24px rgba(10, 132, 255, 0.7),
-    0 0 48px rgba(10, 132, 255, 0.4);
-  animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  position: relative;
-}
-
-.nav-brand-icon::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(10, 132, 255, 0.3) 0%, transparent 70%);
+  background: linear-gradient(135deg, #0a84ff 0%, #64d2ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .nav-tabs {
