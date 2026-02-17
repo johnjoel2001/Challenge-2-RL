@@ -310,6 +310,7 @@ const AgentPanel = ({ label, variant, state, ewCars, nsCars, note }) => (
 // Main Component
 const RewardHackingDemo = () => {
   const [running, setRunning] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [ewCarsBl, setEwCarsBl] = useState([]);
   const [ewCarsFa, setEwCarsFa] = useState([]);
   const [nsCarsBl, setNsCarsBl] = useState([]);
@@ -394,6 +395,17 @@ const RewardHackingDemo = () => {
     }
   }, [baseline, fair]);
 
+  // Handle ESC key to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && fullscreen) {
+        setFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fullscreen]);
+
   const handleStart = () => setRunning(true);
   const handlePause = () => setRunning(false);
   const handleReset = async () => {
@@ -405,64 +417,81 @@ const RewardHackingDemo = () => {
     setNsCarsBl([]);
     setNsCarsFa([]);
   };
+  const toggleFullscreen = () => setFullscreen(!fullscreen);
 
   const isDone = baseline.state.t >= 200;
   const progress = (baseline.state.t / 200) * 100;
 
   return (
-    <div className="rh-root">
+    <div className={`rh-root ${fullscreen ? 'rh-fullscreen' : ''}`}>
       <div className="rh-container">
-        {/* Subtitle and Controls */}
-        <div className="rh-header">
-          <p className="rh-subtitle">Baseline vs Fair agent under asymmetric traffic</p>
-          <div className="rh-controls">
-            {!running ? (
-              <button className="rh-btn rh-btn-primary" onClick={handleStart} disabled={isDone}>
-                {isDone ? 'Complete' : 'Start'}
-              </button>
-            ) : (
-              <button className="rh-btn rh-btn-muted" onClick={handlePause}>
-                Pause
-              </button>
-            )}
-            <button className="rh-btn rh-btn-ghost" onClick={handleReset}>
-              Reset
-            </button>
-          </div>
-        </div>
+        {!fullscreen && (
+          <>
+            {/* Subtitle and Controls */}
+            <div className="rh-header">
+              <p className="rh-subtitle">Baseline vs Fair agent under asymmetric traffic</p>
+              <div className="rh-controls">
+                {!running ? (
+                  <button className="rh-btn rh-btn-primary" onClick={handleStart} disabled={isDone}>
+                    {isDone ? 'Complete' : 'Start'}
+                  </button>
+                ) : (
+                  <button className="rh-btn rh-btn-muted" onClick={handlePause}>
+                    Pause
+                  </button>
+                )}
+                <button className="rh-btn rh-btn-ghost" onClick={handleReset}>
+                  Reset
+                </button>
+                <button className="rh-btn rh-btn-ghost" onClick={toggleFullscreen} title="Fullscreen">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                  </svg>
+                </button>
+              </div>
+            </div>
 
-        {/* Status Indicator */}
-        <div className="rh-status-indicator">
-          {baseline.state.error || fair.state.error ? (
-            <div className="rh-status-error">
-              <span>Failed to connect to API server</span>
-              <span className="rh-status-hint">Ensure the backend is running at {window.location.origin}</span>
+            {/* Status Indicator */}
+            <div className="rh-status-indicator">
+              {baseline.state.error || fair.state.error ? (
+                <div className="rh-status-error">
+                  <span>Failed to connect to API server</span>
+                  <span className="rh-status-hint">Ensure the backend is running at {window.location.origin}</span>
+                </div>
+              ) : baseline.state.isInitialized && fair.state.isInitialized ? (
+                <div className="rh-status-success">
+                  Models loaded and ready
+                </div>
+              ) : (
+                <div className="rh-status-loading">
+                  Loading trained models...
+                </div>
+              )}
             </div>
-          ) : baseline.state.isInitialized && fair.state.isInitialized ? (
-            <div className="rh-status-success">
-              Models loaded and ready
-            </div>
-          ) : (
-            <div className="rh-status-loading">
-              Loading trained models...
-            </div>
-          )}
-        </div>
 
-        {/* Progress */}
-        <div className="rh-progress-track">
-          <div className="rh-progress-fill" style={{ width: `${progress}%` }} />
-        </div>
-        <div className="rh-status-row">
-          <span className="rh-step-label">
-            {isDone ? 'Complete' : `Step ${baseline.state.t} / 200`}
-          </span>
-          <span className="rh-status-metrics">
-            Baseline EW {baseline.state.greenPctEW}%
-            <span className="rh-status-sep" />
-            Fair EW {fair.state.greenPctEW}%
-          </span>
-        </div>
+            {/* Progress */}
+            <div className="rh-progress-track">
+              <div className="rh-progress-fill" style={{ width: `${progress}%` }} />
+            </div>
+            <div className="rh-status-row">
+              <span className="rh-step-label">
+                {isDone ? 'Complete' : `Step ${baseline.state.t} / 200`}
+              </span>
+              <span className="rh-status-metrics">
+                Baseline EW {baseline.state.greenPctEW}%
+                <span className="rh-status-sep" />
+                Fair EW {fair.state.greenPctEW}%
+              </span>
+            </div>
+          </>
+        )}
+
+        {/* Exit fullscreen button (shown only in fullscreen) */}
+        {fullscreen && (
+          <button className="rh-exit-fullscreen" onClick={toggleFullscreen} title="Exit Fullscreen (ESC)">
+            ✕
+          </button>
+        )}
 
         {/* Panels */}
         <div className="rh-grid">
