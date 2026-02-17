@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["python310", "nodejs-18_x", "npm-9_x"]
+
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
+[phases.build]
+cmds = ["bash build.sh"]
+
+[start]
+cmd = "python api_server.py"
