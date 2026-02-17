@@ -213,7 +213,7 @@ if STATIC_DIR.exists():
         """Serve React app for all non-API routes"""
         # Don't interfere with API routes
         if full_path.startswith(("api", "docs", "openapi.json", "redoc")):
-            return {"error": "Not found"}
+            raise HTTPException(status_code=404, detail="Not found")
         
         # Check if a static file exists for this path
         file_path = STATIC_DIR / full_path
@@ -225,7 +225,7 @@ if STATIC_DIR.exists():
         if index_file.exists():
             return FileResponse(index_file)
         
-        return {"error": "Not found"}
+        raise HTTPException(status_code=404, detail="Not found")
 else:
     print("Warning: React frontend dist directory not found. Only API will be available.")
 
