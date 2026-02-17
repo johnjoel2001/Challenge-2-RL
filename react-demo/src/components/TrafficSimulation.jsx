@@ -423,12 +423,9 @@ const TrafficSimulation = () => {
   return (
     <div className="ts-root">
       <div className="ts-container">
-        {/* Header */}
+        {/* Subtitle and Controls */}
         <div className="ts-header">
-          <div className="ts-header-text">
-            <h1 className="ts-title">Normal Traffic Environment</h1>
-            <p className="ts-subtitle">Symmetric traffic distribution / no reward hacking</p>
-          </div>
+          <p className="ts-subtitle">Symmetric traffic distribution / no reward hacking</p>
           <div className="ts-controls">
             {!running ? (
               <button className="ts-btn ts-btn-primary" onClick={handleStart} disabled={isDone}>

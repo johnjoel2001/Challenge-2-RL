@@ -19,13 +19,13 @@ function App() {
             className={`nav-tab ${activeDemo === 'reward-hacking' ? 'nav-tab-active' : ''}`}
             onClick={() => setActiveDemo('reward-hacking')}
           >
-            Reward Hacking
+            Reward Hacking Demo
           </button>
           <button
             className={`nav-tab ${activeDemo === 'normal' ? 'nav-tab-active' : ''}`}
             onClick={() => setActiveDemo('normal')}
           >
-            Normal Environment
+            Standard Sim
           </button>
         </div>
       </nav>

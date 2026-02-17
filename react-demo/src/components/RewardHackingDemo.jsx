@@ -412,12 +412,9 @@ const RewardHackingDemo = () => {
   return (
     <div className="rh-root">
       <div className="rh-container">
-        {/* Header */}
+        {/* Subtitle and Controls */}
         <div className="rh-header">
-          <div className="rh-header-text">
-            <h1 className="rh-title">Reward Hacking</h1>
-            <p className="rh-subtitle">Baseline vs Fair agent under asymmetric traffic</p>
-          </div>
+          <p className="rh-subtitle">Baseline vs Fair agent under asymmetric traffic</p>
           <div className="rh-controls">
             {!running ? (
               <button className="rh-btn rh-btn-primary" onClick={handleStart} disabled={isDone}>
@@ -438,16 +435,16 @@ const RewardHackingDemo = () => {
         <div className="rh-status-indicator">
           {baseline.state.error || fair.state.error ? (
             <div className="rh-status-error">
-              API Connection Failed: {baseline.state.error || fair.state.error}
-              <span className="rh-status-hint">Make sure the API server is running and accessible</span>
+              <span>Failed to connect to API server</span>
+              <span className="rh-status-hint">Ensure the backend is running at {window.location.origin}</span>
             </div>
           ) : baseline.state.isInitialized && fair.state.isInitialized ? (
             <div className="rh-status-success">
-              Connected to Trained Models (Baseline & Fair Agents)
+              Models loaded and ready
             </div>
           ) : (
             <div className="rh-status-loading">
-              Initializing model inference...
+              Loading trained models...
             </div>
           )}
         </div>
