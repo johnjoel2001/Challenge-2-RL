@@ -1,5 +1,7 @@
 # Traffic Intersection RL: Reward Hacking Demo
 
+> ### [Try the Live Demo →](https://challenge-2-rl-production.up.railway.app/)
+
 Built a custom traffic intersection environment where an RL agent controls the signal (North-South vs East-West). Traffic is asymmetric - EW gets way more cars than NS - and this breaks a naive PPO agent in an interesting way. The agent learns to just keep EW green almost the entire time because that maximizes throughput. Technically correct reward-wise, but NS traffic gets starved and waits forever. Classic reward hacking.
 
 ## What's Actually Happening
