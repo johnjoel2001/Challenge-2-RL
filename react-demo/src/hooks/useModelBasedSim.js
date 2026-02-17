@@ -22,10 +22,12 @@ export const useModelBasedSim = (agentType) => {
     isInitialized: false,
     error: null,
   });
+  const [episodeId, setEpisodeId] = useState(null);
 
   const reset = useCallback(async () => {
     try {
       const response = await apiClient.initEpisode(agentType, 42);
+      setEpisodeId(response.episode_id);
       setState({
         phase: response.info.phase || 0,
         t: 0,
@@ -49,8 +51,12 @@ export const useModelBasedSim = (agentType) => {
   }, [agentType]);
 
   const step = useCallback(async () => {
+    if (!episodeId) {
+      console.error('No episode_id - call reset first');
+      return;
+    }
     try {
-      const response = await apiClient.stepEnvironment(agentType);
+      const response = await apiClient.stepEnvironment(episodeId);
 
       setState((prev) => {
         const newState = { ...prev };
@@ -85,7 +91,7 @@ export const useModelBasedSim = (agentType) => {
       console.error('Step failed:', error);
       setState((prev) => ({ ...prev, error: error.message }));
     }
-  }, [agentType]);
+  }, [episodeId]);
 
   return { state, step, reset };
 };

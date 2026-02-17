@@ -193,27 +193,29 @@ FastAPI server that loads both trained models and exposes them via REST endpoint
 **Endpoints:**
 
 - `GET /api/status` - Returns service status and whether models are loaded
-- `POST /init` - Initialize a new episode with specified agent type (baseline or fair) and optional seed
+- `POST /init` - Initialize a new episode with specified agent type (baseline or fair) and optional seed, returns unique episode_id
 - `POST /step` - Execute one timestep using the model to predict action and step the environment
 - `POST /reset` - Clear all active environment instances
 
 **Request/Response:**
 
 ```python
-# Initialize episode
+# Initialize episode (creates new session)
 POST /init
 Body: {"agent_type": "baseline" | "fair", "seed": optional_int}
-Returns: {"observation": [float], "info": {...}}
+Returns: {"episode_id": "uuid", "observation": [float], "info": {...}}
 
-# Step environment
+# Step environment (uses episode_id for session isolation)
 POST /step
-Body: {"agent_type": "baseline" | "fair"}
+Body: {"episode_id": "uuid"}
 Returns: {"action": int, "observation": [float], "reward": float, "done": bool, "info": {...}}
 
-# Reset environments
+# Reset all sessions
 POST /reset
-Returns: {"status": "reset"}
+Returns: {"status": "reset", "cleared_sessions": true}
 ```
+
+Each episode gets a unique `episode_id` to enable concurrent clients without interference. Sessions are automatically cleaned up when episodes complete.
 
 Frontend calls these endpoints in [`useModelBasedSim.js`](react-demo/src/hooks/useModelBasedSim.js) to run the simulation in real-time.
 
