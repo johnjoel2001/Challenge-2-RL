@@ -72,9 +72,8 @@ export const useModelBasedSim = (agentType) => {
         newState.gap = info.fairness_gap || 0;
         newState.reward = prev.reward + stepReward;
 
-        // Estimate cars served (rough approximation from queue changes)
-        const queueTotal = (info.queue_ns || 0) + (info.queue_ew || 0);
-        newState.served = Math.max(0, prev.served + (5 - queueTotal / 2));
+        // Track actual cars served from backend throughput
+        newState.served = prev.served + (info.throughput || 0);
 
         // Calculate green percentages
         newState.greenPctEW = ((newState.greenEW / Math.max(1, newState.t)) * 100).toFixed(0);
