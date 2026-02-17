@@ -5,11 +5,14 @@ Handles initialization and step-by-step execution of both baseline and fair agen
 import json
 from typing import Dict, List, Optional
 import os
+from pathlib import Path
 
 import numpy as np
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from stable_baselines3 import PPO
 
@@ -198,6 +201,21 @@ def reset_environments():
     baseline_env = None
     fair_env = None
     return {"status": "reset"}
+
+
+# Mount static files for the React frontend 
+STATIC_DIR = Path(__file__).parent / "react-demo" / "dist"
+if STATIC_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="static")
+    
+    @app.get("/{full_path:path}")
+    async def serve_react_app(full_path: str):
+        """Serve React app for all non-API routes"""
+        if not full_path.startswith(("api", "docs", "openapi.json", "redoc")):
+            index_file = STATIC_DIR / "index.html"
+            if index_file.exists():
+                return FileResponse(index_file)
+        return {"error": "Not found"}
 
 
 if __name__ == "__main__":

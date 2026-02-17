@@ -1,5 +1,7 @@
 // API client for communicating with the Python backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// If VITE_API_URL is not set or empty, use same origin (for single-service deployment)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+                     (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
 export const apiClient = {
   async checkHealth() {
