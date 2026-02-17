@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL ||
 
 export const apiClient = {
   async checkHealth() {
-    const response = await fetch(`${API_BASE_URL}/`);
+    const response = await fetch(`${API_BASE_URL}/api/status`);
     return response.json();
   },
 

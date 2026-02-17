@@ -120,8 +120,8 @@ def add_extra_info(env, info):
     return info
 
 
-@app.get("/")
-def root():
+@app.get("/api/status")
+def status():
     return {
         "service": "Traffic Signal RL API",
         "status": "running",
@@ -211,11 +211,23 @@ if STATIC_DIR.exists():
     @app.get("/{full_path:path}")
     async def serve_react_app(full_path: str):
         """Serve React app for all non-API routes"""
-        if not full_path.startswith(("api", "docs", "openapi.json", "redoc")):
-            index_file = STATIC_DIR / "index.html"
-            if index_file.exists():
-                return FileResponse(index_file)
+        # Don't interfere with API routes
+        if full_path.startswith(("api", "docs", "openapi.json", "redoc")):
+            return {"error": "Not found"}
+        
+        # Check if a static file exists for this path
+        file_path = STATIC_DIR / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        
+        # Otherwise, serve the React app's index.html (for SPA routing)
+        index_file = STATIC_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file)
+        
         return {"error": "Not found"}
+else:
+    print("Warning: React frontend dist directory not found. Only API will be available.")
 
 
 if __name__ == "__main__":
