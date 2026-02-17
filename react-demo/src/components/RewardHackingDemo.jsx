@@ -4,166 +4,6 @@ import { useModelBasedSim } from '../hooks/useModelBasedSim';
 
 const W = 500, H = 500, MID = 250, ROAD_W = 80;
 
-// Hardcoded baseline behavior - favors EW heavily (reward hacking)
-const useBaselineSim = () => {
-  const [state, setState] = useState({
-    phase: 0,
-    t: 0,
-    reward: 0,
-    served: 0,
-    nsWaitTotal: 0,
-    greenEW: 0,
-    greenNS: 0,
-    wNS: 0,
-    wEW: 0,
-    gap: 0,
-    greenPctEW: '0',
-    greenPctNS: '0',
-  });
-
-  const reset = useCallback(() => {
-    setState({
-      phase: 0,
-      t: 0,
-      reward: 0,
-      served: 0,
-      nsWaitTotal: 0,
-      greenEW: 0,
-      greenNS: 0,
-      wNS: 0,
-      wEW: 0,
-      gap: 0,
-      greenPctEW: '0',
-      greenPctNS: '0',
-    });
-  }, []);
-
-  const step = useCallback(() => {
-    setState(prev => {
-      const newState = { ...prev };
-      newState.t++;
-
-      // Agent only gives NS green for 10% of the time (reward hacking!)
-      // Brief green periods at t=70-79 and t=150-159
-      const isNSGreen = (newState.t >= 70 && newState.t < 80) || 
-                        (newState.t >= 150 && newState.t < 160);
-      newState.phase = isNSGreen ? 1 : 0;
-
-      if (newState.phase === 0) newState.greenEW++;
-      else newState.greenNS++;
-
-      let ewServed = 0;
-      if (newState.phase === 0) {
-        ewServed = 3 + Math.floor(Math.random() * 3);
-      }
-      newState.served = prev.served + ewServed;
-
-      let nsServed = 0;
-      if (newState.phase === 1) {
-        nsServed = 2;
-        newState.served += nsServed;
-      } else {
-        newState.nsWaitTotal = prev.nsWaitTotal + 2;
-      }
-
-      newState.wNS = newState.nsWaitTotal / Math.max(1, newState.t);
-      newState.wEW = newState.phase === 0 ? 0.1 : (newState.greenEW > 0 ? 0.2 : 0);
-      newState.gap = Math.abs(newState.wNS - newState.wEW);
-
-      newState.reward = prev.reward + ewServed + nsServed;
-      newState.greenPctEW = ((newState.greenEW / Math.max(1, newState.t)) * 100).toFixed(0);
-      newState.greenPctNS = ((newState.greenNS / Math.max(1, newState.t)) * 100).toFixed(0);
-
-      return newState;
-    });
-  }, []);
-
-  return { state, step, reset };
-};
-
-// Fair agent simulation - balances wait times between directions
-const useFairSim = () => {
-  const [state, setState] = useState({
-    phase: 0,
-    t: 0,
-    tss: 0,
-    reward: 0,
-    served: 0,
-    nsWaitTotal: 0,
-    greenEW: 0,
-    greenNS: 0,
-    wNS: 0,
-    wEW: 0,
-    gap: 0,
-    greenPctEW: '0',
-    greenPctNS: '0',
-  });
-
-  const reset = useCallback(() => {
-    setState({
-      phase: 0,
-      t: 0,
-      tss: 0,
-      reward: 0,
-      served: 0,
-      nsWaitTotal: 0,
-      greenEW: 0,
-      greenNS: 0,
-      wNS: 0,
-      wEW: 0,
-      gap: 0,
-      greenPctEW: '0',
-      greenPctNS: '0',
-    });
-  }, []);
-
-  const step = useCallback(() => {
-    setState(prev => {
-      const newState = { ...prev };
-      newState.t++;
-
-      // Fair agent switches every 60 steps for more balanced service
-      newState.tss = prev.tss + 1;
-      if (newState.tss >= 60) {
-        newState.phase = prev.phase === 0 ? 1 : 0;
-        newState.tss = 0;
-      } else {
-        newState.phase = prev.phase;
-      }
-
-      if (newState.phase === 0) newState.greenEW++;
-      else newState.greenNS++;
-
-      let ewServed = 0;
-      if (newState.phase === 0) {
-        ewServed = 3 + Math.floor(Math.random() * 3);
-      }
-      newState.served = prev.served + ewServed;
-
-      let nsServed = 0;
-      if (newState.phase === 1) {
-        nsServed = 2;
-        newState.served += nsServed;
-      } else {
-        newState.nsWaitTotal = prev.nsWaitTotal + 2;
-      }
-
-      newState.wNS = newState.nsWaitTotal / Math.max(1, newState.t);
-      newState.wEW = newState.phase === 0 ? 0.1 : (newState.greenEW > 0 ? 0.2 : 0);
-      newState.gap = Math.abs(newState.wNS - newState.wEW);
-
-      // Fair agent penalizes reward for fairness gap
-      newState.reward = prev.reward + ewServed + nsServed - 0.08 * newState.gap;
-      newState.greenPctEW = ((newState.greenEW / Math.max(1, newState.t)) * 100).toFixed(0);
-      newState.greenPctNS = ((newState.greenNS / Math.max(1, newState.t)) * 100).toFixed(0);
-
-      return newState;
-    });
-  }, []);
-
-  return { state, step, reset };
-};
-
 const SignalIndicator = ({ isGreen }) => (
   <span className={`rh-signal-dot ${isGreen ? 'rh-signal-green' : 'rh-signal-red'}`} />
 );
@@ -469,7 +309,6 @@ const AgentPanel = ({ label, variant, state, ewCars, nsCars, note }) => (
 
 // Main Component
 const RewardHackingDemo = () => {
-  const [mode, setMode] = useState('hardcoded'); // 'hardcoded' or 'model'
   const [running, setRunning] = useState(false);
   const [ewCarsBl, setEwCarsBl] = useState([]);
   const [ewCarsFa, setEwCarsFa] = useState([]);
@@ -477,17 +316,9 @@ const RewardHackingDemo = () => {
   const [nsCarsFa, setNsCarsFa] = useState([]);
   const timerRef = useRef(null);
 
-  // Hardcoded simulation hooks
-  const baselineHardcoded = useBaselineSim();
-  const fairHardcoded = useFairSim();
-
   // Model-based simulation hooks
-  const baselineModel = useModelBasedSim('baseline');
-  const fairModel = useModelBasedSim('fair');
-
-  // Select the active hooks based on mode
-  const baseline = mode === 'hardcoded' ? baselineHardcoded : baselineModel;
-  const fair = mode === 'hardcoded' ? fairHardcoded : fairModel;
+  const baseline = useModelBasedSim('baseline');
+  const fair = useModelBasedSim('fair');
 
   const spawnEWCars = (arr) => {
     const newCars = [...arr];
@@ -555,42 +386,20 @@ const RewardHackingDemo = () => {
     return () => clearInterval(timerRef.current);
   }, [running, baseline.state.t, tick]);
 
-  // Initialize model-based simulations when component mounts or mode changes
+  // Initialize model-based simulations when component mounts
   useEffect(() => {
-    if (mode === 'model' && !baseline.state.isInitialized) {
-      baselineModel.reset();
-      fairModel.reset();
+    if (!baseline.state.isInitialized) {
+      baseline.reset();
+      fair.reset();
     }
-  }, [mode, baseline.state.isInitialized, baselineModel, fairModel]);
+  }, [baseline, fair]);
 
   const handleStart = () => setRunning(true);
   const handlePause = () => setRunning(false);
   const handleReset = async () => {
     setRunning(false);
-    if (mode === 'model') {
-      await baseline.reset();
-      await fair.reset();
-    } else {
-      baseline.reset();
-      fair.reset();
-    }
-    setEwCarsBl([]);
-    setEwCarsFa([]);
-    setNsCarsBl([]);
-    setNsCarsFa([]);
-  };
-
-  const handleModeSwitch = async (newMode) => {
-    setRunning(false);
-    setMode(newMode);
-    // Initialize model-based simulations when switching to model mode
-    if (newMode === 'model') {
-      await baselineModel.reset();
-      await fairModel.reset();
-    } else {
-      baselineHardcoded.reset();
-      fairHardcoded.reset();
-    }
+    await baseline.reset();
+    await fair.reset();
     setEwCarsBl([]);
     setEwCarsFa([]);
     setNsCarsBl([]);
@@ -609,22 +418,6 @@ const RewardHackingDemo = () => {
             <h1 className="rh-title">Reward Hacking</h1>
             <p className="rh-subtitle">Baseline vs Fair agent under asymmetric traffic</p>
           </div>
-          <div className="rh-mode-selector">
-            <button
-              className={`rh-mode-btn ${mode === 'hardcoded' ? 'rh-mode-active' : ''}`}
-              onClick={() => handleModeSwitch('hardcoded')}
-              disabled={running}
-            >
-              Hardcoded
-            </button>
-            <button
-              className={`rh-mode-btn ${mode === 'model' ? 'rh-mode-active' : ''}`}
-              onClick={() => handleModeSwitch('model')}
-              disabled={running}
-            >
-              Model-Based
-            </button>
-          </div>
           <div className="rh-controls">
             {!running ? (
               <button className="rh-btn rh-btn-primary" onClick={handleStart} disabled={isDone}>
@@ -642,24 +435,22 @@ const RewardHackingDemo = () => {
         </div>
 
         {/* Status Indicator */}
-        {mode === 'model' && (
-          <div className="rh-status-indicator">
-            {baseline.state.error || fair.state.error ? (
-              <div className="rh-status-error">
-                API Connection Failed: {baseline.state.error || fair.state.error}
-                <span className="rh-status-hint">Make sure the API server is running and accessible</span>
-              </div>
-            ) : baseline.state.isInitialized && fair.state.isInitialized ? (
-              <div className="rh-status-success">
-                Connected to Trained Models (Baseline & Fair Agents)
-              </div>
-            ) : (
-              <div className="rh-status-loading">
-                Initializing model inference...
-              </div>
-            )}
-          </div>
-        )}
+        <div className="rh-status-indicator">
+          {baseline.state.error || fair.state.error ? (
+            <div className="rh-status-error">
+              API Connection Failed: {baseline.state.error || fair.state.error}
+              <span className="rh-status-hint">Make sure the API server is running and accessible</span>
+            </div>
+          ) : baseline.state.isInitialized && fair.state.isInitialized ? (
+            <div className="rh-status-success">
+              Connected to Trained Models (Baseline & Fair Agents)
+            </div>
+          ) : (
+            <div className="rh-status-loading">
+              Initializing model inference...
+            </div>
+          )}
+        </div>
 
         {/* Progress */}
         <div className="rh-progress-track">
