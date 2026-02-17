@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Signal RL - Reward Hacking Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 14px 32px; font-size: 1.15em; font-weight: bold;
+            border: none; border-radius: 8px; cursor: pointer;
+            margin: 0 8px; text-transform: uppercase;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-start  { background:#4caf50; color:#fff; }
+        .btn-pause  { background:#ff9800; color:#fff; }
+        .btn-reset  { background:#f44336; color:#fff; }
+        .step-info { color:#fff; margin-top:10px; font-size:1.05em; }
+
+        .grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; max-width:1500px; margin:0 auto; }
+
+        .panel { background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.35); }
+        .hdr { padding:18px; color:#fff; font-size:1.45em; font-weight:bold; text-align:center; }
+        .hdr-bad  { background:linear-gradient(135deg,#e74c3c,#c0392b); }
+        .hdr-good { background:linear-gradient(135deg,#27ae60,#1e8449); }
+
+        .sig { background:#222; color:#fff; text-align:center; padding:12px; font-weight:bold; font-size:1.05em; }
+        .dr { display:inline-block; width:13px; height:13px; border-radius:50%; vertical-align:middle; margin:0 3px; }
+        .dr-r { background:#e74c3c; }
+        .dr-g { background:#2ecc71; }
+
+        .scene { padding:20px; background:#2c3e50; }
+
+        /* intersection */
+        canvas { display:block; width:100%; border-radius:8px; }
+
+        /* stats */
+        .st { background:#1a252f; padding:18px; }
+        .st-title { color:#ffd700; font-size:1.1em; font-weight:bold; text-align:center; margin-bottom:12px; }
+        .st-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .sb { background:rgba(255,255,255,.08); padding:12px; border-radius:8px; text-align:center; }
+        .sb-l { color:rgba(255,255,255,.6); font-size:.8em; margin-bottom:3px; }
+        .sb-v { color:#fff; font-size:1.6em; font-weight:bold; }
+        .sb-w { grid-column:1/-1; }
+        .fb-wrap { margin-top:6px; background:rgba(0,0,0,.3); height:24px; border-radius:12px; overflow:hidden; position:relative; }
+        .fb-bar { height:100%; background:linear-gradient(90deg,#2ecc71,#f39c12,#e74c3c); transition:width .3s; }
+        .fb-txt { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-weight:bold; text-shadow:1px 1px 2px rgba(0,0,0,.7); font-size:.8em; }
+
+        .note { padding:12px; margin:0 18px 18px; border-radius:8px; font-size:.9em; }
+        .note-bad  { background:#fff3cd; border:2px solid #ffc107; color:#856404; }
+        .note-good { background:#d4edda; border:2px solid #28a745; color:#155724; }
+
+        @media(max-width:1100px){ .grid{grid-template-columns:1fr;} }
+    </style>
+</head>
+<body>
+
+<div class="controls">
+    <button class="btn btn-start" id="btnStart">▶ START DEMO</button>
+    <button class="btn btn-pause" id="btnPause" style="display:none">⏸ PAUSE</button>
+    <button class="btn btn-reset" id="btnReset">🔄 RESET</button>
+    <div class="step-info" id="info">Step: 0 / 200</div>
+</div>
+
+<div class="grid">
+    <!-- BASELINE -->
+    <div class="panel">
+        <div class="hdr hdr-bad">❌ BASELINE AGENT (Reward Hacking)</div>
+        <div class="sig" id="sig-bl">Current Signal: NS RED <span class="dr dr-r"></span> | EW GREEN <span class="dr dr-g"></span></div>
+        <div class="scene"><canvas id="cv-bl" width="500" height="500"></canvas></div>
+        <div class="st">
+            <div class="st-title">📊 TRAFFIC STATS</div>
+            <div class="st-grid">
+                <div class="sb"><div class="sb-l">NS Avg Wait</div><div class="sb-v" id="bl-wns">0.0</div></div>
+                <div class="sb"><div class="sb-l">EW Avg Wait</div><div class="sb-v" id="bl-wew">0.0</div></div>
+                <div class="sb sb-w">
+                    <div class="sb-l">Fairness Gap</div><div class="sb-v" id="bl-fg">0.0</div>
+                    <div class="fb-wrap"><div class="fb-bar" id="bl-fb" style="width:0%"></div><div class="fb-txt" id="bl-ft">Fair</div></div>
+                </div>
+                <div class="sb"><div class="sb-l">Total Reward</div><div class="sb-v" id="bl-rw">0</div></div>
+                <div class="sb"><div class="sb-l">Cars Served</div><div class="sb-v" id="bl-sv">0</div></div>
+            </div>
+        </div>
+        <div class="note note-bad">⚠️ <strong>Reward Hacking:</strong> EW has more traffic → green stays EW → NS 2 cars wait forever!</div>
+    </div>
+
+    <!-- FAIR -->
+    <div class="panel">
+        <div class="hdr hdr-good">✅ FAIR AGENT (Balanced)</div>
+        <div class="sig" id="sig-fa">Current Signal: NS RED <span class="dr dr-r"></span> | EW GREEN <span class="dr dr-g"></span></div>
+        <div class="scene"><canvas id="cv-fa" width="500" height="500"></canvas></div>
+        <div class="st">
+            <div class="st-title">📊 TRAFFIC STATS</div>
+            <div class="st-grid">
+                <div class="sb"><div class="sb-l">NS Avg Wait</div><div class="sb-v" id="fa-wns">0.0</div></div>
+                <div class="sb"><div class="sb-l">EW Avg Wait</div><div class="sb-v" id="fa-wew">0.0</div></div>
+                <div class="sb sb-w">
+                    <div class="sb-l">Fairness Gap</div><div class="sb-v" id="fa-fg">0.0</div>
+                    <div class="fb-wrap"><div class="fb-bar" id="fa-fb" style="width:0%"></div><div class="fb-txt" id="fa-ft">Fair</div></div>
+                </div>
+                <div class="sb"><div class="sb-l">Total Reward</div><div class="sb-v" id="fa-rw">0</div></div>
+                <div class="sb"><div class="sb-l">Cars Served</div><div class="sb-v" id="fa-sv">0</div></div>
+            </div>
+        </div>
+        <div class="note note-good">✅ <strong>Fair Service:</strong> Both directions get balanced green time. NS cars get served!</div>
+    </div>
+</div>
+
+<script>
+/* ============================================================
+   SIMULATION
+   ============================================================ */
+class Sim {
+    constructor(isBaseline) {
+        this.isBaseline = isBaseline;
+        this.reset();
+    }
+    reset() {
+        this.phase = 0;        // 0=EW green, 1=NS green
+        this.t = 0;
+        this.reward = 0;
+        this.served = 0;
+        this.tss = 0;
+        this.nsWaitTotal = 0;  // cumulative wait ticks for NS cars
+        this.ewServedTotal = 0;
+        this.greenEW = 0;
+        this.greenNS = 0;
+    }
+    step() {
+        this.t++;
+
+        if (this.isBaseline) {
+            // Baseline: keep EW green almost all the time
+            // Give NS green very briefly around step 160-168 (too little, too late)
+            if (this.t >= 160 && this.t <= 168) {
+                this.phase = 1;
+            } else {
+                this.phase = 0;
+            }
+        } else {
+            // Fair agent: alternate fairly, ~10 seconds each direction
+            this.tss++;
+            if (this.tss >= 60) {
+                this.phase = this.phase === 0 ? 1 : 0;
+                this.tss = 0;
+            }
+        }
+
+        if (this.phase === 0) this.greenEW++;
+        else this.greenNS++;
+
+        // EW cars served when green
+        let ewServed = 0;
+        if (this.phase === 0) {
+            ewServed = 3 + Math.floor(Math.random() * 3); // 3-5 cars pass per tick
+        }
+        this.ewServedTotal += ewServed;
+        this.served += ewServed;
+
+        // NS: 2 cars always waiting. When NS green, they get served briefly
+        let nsServed = 0;
+        if (this.phase === 1) {
+            nsServed = 2; // serve the 2 waiting cars
+            this.served += nsServed;
+        } else {
+            // NS is red, those 2 cars keep waiting
+            this.nsWaitTotal += 2;
+        }
+
+        const wNS = this.nsWaitTotal / Math.max(1, this.t);
+        const wEW = this.phase === 0 ? 0.1 : (this.greenEW > 0 ? 0.2 : 0);
+        const gap = Math.abs(wNS - wEW);
+
+        this.reward += ewServed + nsServed - 0.08 * gap * (this.isBaseline ? 0 : 1);
+
+        return {
+            phase: this.phase,
+            wNS, wEW, gap,
+            reward: this.reward,
+            served: this.served,
+            greenPctEW: (this.greenEW / Math.max(1, this.t) * 100).toFixed(0),
+            greenPctNS: (this.greenNS / Math.max(1, this.t) * 100).toFixed(0),
+        };
+    }
+}
+
+/* ============================================================
+   CANVAS DRAWING
+   ============================================================ */
+const W = 500, H = 500;
+const MID = 250;
+const ROAD_W = 80;
+
+// EW flowing cars: array of {x, speed}
+let ewCars_bl = [], ewCars_fa = [];
+
+function spawnEWCars(arr) {
+    // Spawn from both east and west sides
+    if (Math.random() < 0.5) arr.push({ x: -20, y: MID - 12, speed: 4 + Math.random()*3, fromLeft: true });
+    if (Math.random() < 0.5) arr.push({ x: W + 20, y: MID + 4, speed: -(4 + Math.random()*3), fromLeft: false });
+}
+
+function updateEWCars(arr) {
+    for (let c of arr) c.x += c.speed;
+    // Remove off-screen
+    return arr.filter(c => c.x > -30 && c.x < W + 30);
+}
+
+function drawIntersection(ctx, state, ewCars, isBaseline) {
+    // Background
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, W, H);
+
+    // Roads
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, MID - ROAD_W/2, W, ROAD_W);       // EW road
+    ctx.fillRect(MID - ROAD_W/2, 0, ROAD_W, H);       // NS road
+
+    // Center intersection
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(MID - ROAD_W/2, MID - ROAD_W/2, ROAD_W, ROAD_W);
+
+    // Dashed yellow lines - horizontal
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([18, 14]);
+    ctx.beginPath();
+    ctx.moveTo(0, MID);
+    ctx.lineTo(MID - ROAD_W/2, MID);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(MID + ROAD_W/2, MID);
+    ctx.lineTo(W, MID);
+    ctx.stroke();
+
+    // Dashed yellow lines - vertical
+    ctx.beginPath();
+    ctx.moveTo(MID, 0);
+    ctx.lineTo(MID, MID - ROAD_W/2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(MID, MID + ROAD_W/2);
+    ctx.lineTo(MID, H);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Direction labels
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('NORTH', MID, 20);
+    ctx.fillText('SOUTH', MID, H - 10);
+    ctx.textAlign = 'left';
+    ctx.fillText('WEST', 10, MID - ROAD_W/2 - 8);
+    ctx.textAlign = 'right';
+    ctx.fillText('EAST', W - 10, MID - ROAD_W/2 - 8);
+
+    // --- Draw EW flowing cars (orange) when EW is green ---
+    if (state.phase === 0) {
+        for (let c of ewCars) {
+            ctx.fillStyle = '#f39c12';
+            ctx.strokeStyle = '#e67e22';
+            ctx.lineWidth = 2;
+            ctx.fillRect(c.x, c.y, 16, 12);
+            ctx.strokeRect(c.x, c.y, 16, 12);
+        }
+    }
+
+    // --- Draw NS waiting cars (blue) - always 2 in North, 2 in South ---
+    const nsColor = '#3498db';
+    const nsBorder = '#2980b9';
+    ctx.lineWidth = 2;
+
+    // North: 2 cars waiting above intersection
+    for (let i = 0; i < 2; i++) {
+        const cx = MID + 8;
+        const cy = MID - ROAD_W/2 - 30 - i * 28;
+        ctx.fillStyle = nsColor;
+        ctx.strokeStyle = nsBorder;
+        ctx.fillRect(cx - 7, cy - 7, 14, 20);
+        ctx.strokeRect(cx - 7, cy - 7, 14, 20);
+    }
+
+    // South: 2 cars waiting below intersection
+    for (let i = 0; i < 2; i++) {
+        const cx = MID - 8;
+        const cy = MID + ROAD_W/2 + 18 + i * 28;
+        ctx.fillStyle = nsColor;
+        ctx.strokeStyle = nsBorder;
+        ctx.fillRect(cx - 7, cy - 7, 14, 20);
+        ctx.strokeRect(cx - 7, cy - 7, 14, 20);
+    }
+
+    // If NS is green in fair model, show NS cars moving through briefly
+    if (state.phase === 1) {
+        // Show cars passing through intersection (NS green)
+        ctx.fillStyle = '#2ecc71';
+        ctx.globalAlpha = 0.5;
+        ctx.fillRect(MID - 7, MID - ROAD_W/2, 14, ROAD_W);
+        ctx.globalAlpha = 1.0;
+    }
+
+    // --- Traffic light indicators (circles) ---
+    const nsLightColor = state.phase === 1 ? '#2ecc71' : '#e74c3c';
+    const ewLightColor = state.phase === 0 ? '#2ecc71' : '#e74c3c';
+    const nsShadow     = state.phase === 1 ? 'rgba(46,204,113,.6)' : 'rgba(231,76,60,.6)';
+    const ewShadow     = state.phase === 0 ? 'rgba(46,204,113,.6)' : 'rgba(231,76,60,.6)';
+
+    function drawLight(x, y, color, shadow, label) {
+        ctx.beginPath();
+        ctx.arc(x, y, 24, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.shadowColor = shadow;
+        ctx.shadowBlur = 20;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, x, y);
+    }
+
+    drawLight(MID, 70, nsLightColor, nsShadow, 'N');           // North
+    drawLight(MID, H - 70, nsLightColor, nsShadow, 'S');       // South
+    drawLight(W - 70, MID, ewLightColor, ewShadow, 'E');       // East
+    drawLight(70, MID, ewLightColor, ewShadow, 'W');           // West
+}
+
+/* ============================================================
+   MAIN LOOP
+   ============================================================ */
+const bl = new Sim(true);
+const fa = new Sim(false);
+const cvBl = document.getElementById('cv-bl');
+const cvFa = document.getElementById('cv-fa');
+const ctxBl = cvBl.getContext('2d');
+const ctxFa = cvFa.getContext('2d');
+let timer = null, running = false;
+
+function tick() {
+    const sb = bl.step();
+    const sf = fa.step();
+
+    // Spawn & update EW flowing cars
+    if (sb.phase === 0) spawnEWCars(ewCars_bl);
+    ewCars_bl = updateEWCars(ewCars_bl);
+    if (!sb.phase === 0) ewCars_bl = []; // clear when EW red
+
+    if (sf.phase === 0) spawnEWCars(ewCars_fa);
+    ewCars_fa = updateEWCars(ewCars_fa);
+    if (sf.phase === 1) {
+        // When NS green in fair, EW cars slow down / clear
+        ewCars_fa = ewCars_fa.filter(() => Math.random() > 0.3);
+    }
+
+    // Draw
+    drawIntersection(ctxBl, sb, ewCars_bl, true);
+    drawIntersection(ctxFa, sf, ewCars_fa, false);
+
+    // Signal bars
+    function sigHTML(phase) {
+        const ns = phase===1 ? 'GREEN <span class="dr dr-g"></span>' : 'RED <span class="dr dr-r"></span>';
+        const ew = phase===0 ? 'GREEN <span class="dr dr-g"></span>' : 'RED <span class="dr dr-r"></span>';
+        return 'Current Signal: NS '+ns+' | EW '+ew;
+    }
+    document.getElementById('sig-bl').innerHTML = sigHTML(sb.phase);
+    document.getElementById('sig-fa').innerHTML = sigHTML(sf.phase);
+
+    // Stats
+    function updateStats(p, s) {
+        document.getElementById(p+'-wns').textContent = s.wNS.toFixed(1);
+        document.getElementById(p+'-wew').textContent = s.wEW.toFixed(1);
+        document.getElementById(p+'-fg').textContent  = s.gap.toFixed(1);
+        document.getElementById(p+'-rw').textContent  = Math.round(s.reward);
+        document.getElementById(p+'-sv').textContent  = s.served;
+        const pct = Math.min(100, (s.gap / 5) * 100);
+        document.getElementById(p+'-fb').style.width = pct+'%';
+        const lbl = s.gap<0.5?'Fair ✓':s.gap<1.5?'Moderate':s.gap<3?'Unfair!':'EXTREME!';
+        document.getElementById(p+'-ft').textContent = lbl;
+    }
+    updateStats('bl', sb);
+    updateStats('fa', sf);
+
+    document.getElementById('info').textContent =
+        'Step: '+bl.t+' / 200  |  Baseline EW green: '+sb.greenPctEW+'%  |  Fair EW green: '+sf.greenPctEW+'%';
+
+    if (bl.t >= 200) {
+        stop();
+        document.getElementById('info').textContent =
+            'Done! Baseline EW green: '+sb.greenPctEW+'% (unfair) | Fair EW green: '+sf.greenPctEW+'% (balanced)';
+    }
+}
+
+function start() {
+    if (running) return;
+    running = true;
+    document.getElementById('btnStart').style.display = 'none';
+    document.getElementById('btnPause').style.display = 'inline-block';
+    timer = setInterval(tick, 160);
+}
+function stop() {
+    clearInterval(timer); timer=null; running=false;
+    document.getElementById('btnStart').style.display = 'inline-block';
+    document.getElementById('btnPause').style.display = 'none';
+}
+function resetAll() {
+    stop();
+    bl.reset(); fa.reset();
+    ewCars_bl = []; ewCars_fa = [];
+    ctxBl.fillStyle='#111'; ctxBl.fillRect(0,0,W,H);
+    ctxFa.fillStyle='#111'; ctxFa.fillRect(0,0,W,H);
+    drawIntersection(ctxBl, {phase:0}, [], true);
+    drawIntersection(ctxFa, {phase:0}, [], false);
+    ['bl','fa'].forEach(p => {
+        document.getElementById('sig-'+p).innerHTML = 'Current Signal: NS RED <span class="dr dr-r"></span> | EW GREEN <span class="dr dr-g"></span>';
+        document.getElementById(p+'-wns').textContent='0.0';
+        document.getElementById(p+'-wew').textContent='0.0';
+        document.getElementById(p+'-fg').textContent='0.0';
+        document.getElementById(p+'-rw').textContent='0';
+        document.getElementById(p+'-sv').textContent='0';
+        document.getElementById(p+'-fb').style.width='0%';
+        document.getElementById(p+'-ft').textContent='Fair';
+    });
+    document.getElementById('info').textContent='Step: 0 / 200';
+}
+
+document.getElementById('btnStart').onclick = start;
+document.getElementById('btnPause').onclick = stop;
+document.getElementById('btnReset').onclick = resetAll;
+
+// Initial draw
+drawIntersection(ctxBl, {phase:0}, [], true);
+drawIntersection(ctxFa, {phase:0}, [], false);
+</script>
+</body>
+</html>
