@@ -355,10 +355,15 @@ const RewardHackingDemo = () => {
       .filter(c => c.y > -30 && c.y < H + 30);
   };
 
+  const baselineStepRef = useRef(baseline.step);
+  const fairStepRef = useRef(fair.step);
+  baselineStepRef.current = baseline.step;
+  fairStepRef.current = fair.step;
+
   const tick = useCallback(() => {
-    baseline.step();
-    fair.step();
-  }, [baseline, fair]);
+    baselineStepRef.current();
+    fairStepRef.current();
+  }, []);
 
   useEffect(() => {
     if (baseline.state.phase === 0) {
@@ -389,11 +394,10 @@ const RewardHackingDemo = () => {
 
   // Initialize model-based simulations when component mounts
   useEffect(() => {
-    if (!baseline.state.isInitialized) {
-      baseline.reset();
-      fair.reset();
-    }
-  }, [baseline, fair]);
+    baseline.reset();
+    fair.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle ESC key to exit fullscreen
   useEffect(() => {

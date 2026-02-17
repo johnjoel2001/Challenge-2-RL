@@ -36,8 +36,8 @@ app.add_middleware(
 )
 
 # Load models at startup (configurable via environment variables)
-BASELINE_MODEL_PATH = os.getenv("BASELINE_MODEL_PATH", "outputs/ppo_baseline.zip")
-FAIR_MODEL_PATH = os.getenv("FAIR_MODEL_PATH", "outputs/ppo_mitigated.zip")
+BASELINE_MODEL_PATH = os.getenv("BASELINE_MODEL_PATH", "outputs/ppo_baseline_v2.zip")
+FAIR_MODEL_PATH = os.getenv("FAIR_MODEL_PATH", "outputs/ppo_mitigated_v2.zip")
 
 try:
     baseline_model = PPO.load(BASELINE_MODEL_PATH)
