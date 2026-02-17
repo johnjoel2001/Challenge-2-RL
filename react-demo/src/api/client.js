@@ -23,11 +23,11 @@ export const apiClient = {
   },
 
   // Execute one simulation step (model predicts action, env advances)
-  async stepEnvironment(agentType) {
+  async stepEnvironment(episodeId) {
     const response = await fetch(`${API_BASE_URL}/step`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agent_type: agentType }),
+      body: JSON.stringify({ episode_id: episodeId }),
     });
     if (!response.ok) {
       throw new Error(`Step failed: ${response.statusText}`);

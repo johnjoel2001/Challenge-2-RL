@@ -6,6 +6,7 @@ import json
 from typing import Dict, List, Optional
 import os
 from pathlib import Path
+import uuid
 
 import numpy as np
 import uvicorn
@@ -34,19 +35,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load models at startup
+# Load models at startup (configurable via environment variables)
+BASELINE_MODEL_PATH = os.getenv("BASELINE_MODEL_PATH", "outputs/ppo_baseline.zip")
+FAIR_MODEL_PATH = os.getenv("FAIR_MODEL_PATH", "outputs/ppo_mitigated.zip")
+
 try:
-    baseline_model = PPO.load("outputs/ppo_baseline_v2.zip")
-    fair_model = PPO.load("outputs/ppo_mitigated_v2.zip")
-    print("Models loaded successfully")
+    baseline_model = PPO.load(BASELINE_MODEL_PATH)
+    print(f"Baseline model loaded from {BASELINE_MODEL_PATH}")
 except Exception as e:
-    print(f"Warning: Could not load models - {e}")
+    print(f"Warning: Could not load baseline model from {BASELINE_MODEL_PATH} - {e}")
     baseline_model = None
+
+try:
+    fair_model = PPO.load(FAIR_MODEL_PATH)
+    print(f"Fair model loaded from {FAIR_MODEL_PATH}")
+except Exception as e:
+    print(f"Warning: Could not load fair model from {FAIR_MODEL_PATH} - {e}")
     fair_model = None
 
-# Global env instances
-baseline_env = None
-fair_env = None
+# Session storage: maps episode_id to (env, agent_type, model) tuples
+active_sessions: Dict[str, tuple] = {}
 
 
 class InitRequest(BaseModel):
@@ -55,10 +63,11 @@ class InitRequest(BaseModel):
 
 
 class StepRequest(BaseModel):
-    agent_type: str
+    episode_id: str
 
 
 class InitResponse(BaseModel):
+    episode_id: str
     observation: List[float]
     info: Dict
 
@@ -135,20 +144,25 @@ def status():
 @app.post("/init", response_model=InitResponse)
 def initialize_episode(request: InitRequest):
     """Initialize a new episode with the specified agent and optional seed"""
-    global baseline_env, fair_env
-
     try:
+        # Create environment
         env = create_environment(request.agent_type, request.seed)
         obs, info = env.reset(seed=request.seed)
         
-        # Store env in global state so we can call step() later
+        # Select model based on agent type
         if request.agent_type == "baseline":
-            baseline_env = env
+            model = baseline_model
+        elif request.agent_type == "fair":
+            model = fair_model
         else:
-            fair_env = env
+            raise ValueError(f"Unknown agent_type: {request.agent_type}")
+        
+        # Generate unique episode ID and store session
+        episode_id = str(uuid.uuid4())
+        active_sessions[episode_id] = (env, request.agent_type, model)
         
         add_extra_info(env, info)
-        return InitResponse(observation=obs.tolist(), info=info)
+        return InitResponse(episode_id=episode_id, observation=obs.tolist(), info=info)
     
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -160,20 +174,14 @@ def initialize_episode(request: InitRequest):
 @app.post("/step", response_model=StepResponse)
 def step_environment(request: StepRequest):
     """Run one timestep - get action from model and execute it in the environment"""
-    global baseline_env, fair_env
-
-    # Select correct env and model based on agent type
-    if request.agent_type == "baseline":
-        env = baseline_env
-        model = baseline_model
-    elif request.agent_type == "fair":
-        env = fair_env
-        model = fair_model
-    else:
-        raise HTTPException(status_code=400, detail="Invalid agent_type")
+    # Lookup session by episode_id
+    if request.episode_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Episode not found. Call /init first.")
     
-    if env is None or model is None:
-        raise HTTPException(status_code=400, detail=f"{request.agent_type} environment not initialized")
+    env, agent_type, model = active_sessions[request.episode_id]
+    
+    if model is None:
+        raise HTTPException(status_code=500, detail=f"Model for {agent_type} not loaded")
 
     try:
         obs = env._get_obs()
@@ -181,6 +189,10 @@ def step_environment(request: StepRequest):
         next_obs, reward, terminated, truncated, info = env.step(int(action))
         
         add_extra_info(env, info)
+        
+        # Clean up session if episode is done
+        if terminated or truncated:
+            del active_sessions[request.episode_id]
         
         return StepResponse(
             action=int(action),
@@ -197,10 +209,8 @@ def step_environment(request: StepRequest):
 @app.post("/reset")
 def reset_environments():
     """Clear all active environment instances"""
-    global baseline_env, fair_env
-    baseline_env = None
-    fair_env = None
-    return {"status": "reset"}
+    active_sessions.clear()
+    return {"status": "reset", "cleared_sessions": True}
 
 
 # Mount static files for the React frontend 
@@ -213,7 +223,7 @@ if STATIC_DIR.exists():
         """Serve React app for all non-API routes"""
         # Don't interfere with API routes
         if full_path.startswith(("api", "docs", "openapi.json", "redoc")):
-            return {"error": "Not found"}
+            raise HTTPException(status_code=404, detail="Not found")
         
         # Check if a static file exists for this path
         file_path = STATIC_DIR / full_path
@@ -225,7 +235,7 @@ if STATIC_DIR.exists():
         if index_file.exists():
             return FileResponse(index_file)
         
-        return {"error": "Not found"}
+        raise HTTPException(status_code=404, detail="Not found")
 else:
     print("Warning: React frontend dist directory not found. Only API will be available.")
 

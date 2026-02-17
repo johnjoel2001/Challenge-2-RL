@@ -70,6 +70,8 @@ python plot_performance.py
 # Start API server (for frontend)
 python api_server.py
 # Runs on http://localhost:8000
+# Loads outputs/ppo_baseline.zip and outputs/ppo_mitigated.zip by default
+# Override with env vars: BASELINE_MODEL_PATH and FAIR_MODEL_PATH
 ```
 
 ### Frontend (Interactive Demo)
@@ -171,21 +173,7 @@ reward = (
 - Fairness gap > 3.0
 - Safety violations happened (TTC < threshold during switch)
 
-# API Server
-
-[`api_server.py`](api_server.py) is a FastAPI server that loads both models and exposes them via REST:
-
-```python
-@app.post("/reset")
-def reset_endpoint(agent: str = "baseline"):
-    # Resets env, returns initial obs + metrics
-  
-@app.post("/step")
-def step_endpoint(agent: str = "baseline"):
-    # Agent predicts action, env steps, returns next obs + metrics
-```
-
-Frontend calls these endpoints in [`useModelBasedSim.js`](react-demo/src/hooks/useModelBasedSim.js) to run the simulation in real-time.
+### Training Parameters Summary
 
 **Baseline:**
 
@@ -202,9 +190,45 @@ Frontend calls these endpoints in [`useModelBasedSim.js`](react-demo/src/hooks/u
 
 ### API Server ([`api_server.py`](api_server.py))
 
-Endpoints:
+FastAPI server that loads both trained models and exposes them via REST endpoints:
 
-- `GET /
+**Endpoints:**
+
+- `GET /api/status` - Returns service status and whether models are loaded
+- `POST /init` - Initialize a new episode with specified agent type (baseline or fair) and optional seed, returns unique episode_id
+- `POST /step` - Execute one timestep using the model to predict action and step the environment
+- `POST /reset` - Clear all active environment instances
+
+**Request/Response:**
+
+```python
+# Initialize episode (creates new session)
+POST /init
+Body: {"agent_type": "baseline" | "fair", "seed": optional_int}
+Returns: {"episode_id": "uuid", "observation": [float], "info": {...}}
+
+# Step environment (uses episode_id for session isolation)
+POST /step
+Body: {"episode_id": "uuid"}
+Returns: {"action": int, "observation": [float], "reward": float, "done": bool, "info": {...}}
+
+# Reset all sessions
+POST /reset
+Returns: {"status": "reset", "cleared_sessions": true}
+```
+
+Each episode gets a unique `episode_id` to enable concurrent clients without interference. Sessions are automatically cleaned up when episodes complete.
+
+**Configuration (Environment Variables):**
+
+- `BASELINE_MODEL_PATH` - Path to baseline model (default: `outputs/ppo_baseline.zip`)
+- `FAIR_MODEL_PATH` - Path to fair/mitigated model (default: `outputs/ppo_mitigated.zip`)
+- `ALLOWED_ORIGINS` - Comma-separated CORS origins (default: `http://localhost:5173,http://localhost:3000`)
+- `PORT` - Server port (default: `8000`)
+
+Frontend calls these endpoints in [`useModelBasedSim.js`](react-demo/src/hooks/useModelBasedSim.js) to run the simulation in real-time.
+
+## Files
 
 | File                                                                                                | What it does                                              |
 | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |

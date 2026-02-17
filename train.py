@@ -116,7 +116,9 @@ def main() -> None:
     if args.model_out is None:
         args.model_out = f"outputs/ppo_{args.mode}.zip"
 
-    os.makedirs(os.path.dirname(args.model_out), exist_ok=True)
+    model_dir = os.path.dirname(args.model_out)
+    if model_dir:  
+        os.makedirs(model_dir, exist_ok=True)
     model.save(args.model_out)
     print(f"Saved model to {args.model_out}")
 
