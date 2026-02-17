@@ -647,7 +647,7 @@ const RewardHackingDemo = () => {
             {baseline.state.error || fair.state.error ? (
               <div className="rh-status-error">
                 API Connection Failed: {baseline.state.error || fair.state.error}
-                <span className="rh-status-hint">Make sure the API server is running on localhost:8000</span>
+                <span className="rh-status-hint">Make sure the API server is running and accessible</span>
               </div>
             ) : baseline.state.isInitialized && fair.state.isInitialized ? (
               <div className="rh-status-success">

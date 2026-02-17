@@ -4,6 +4,7 @@ Handles initialization and step-by-step execution of both baseline and fair agen
 """
 import json
 from typing import Dict, List, Optional
+import os
 
 import numpy as np
 import uvicorn
@@ -16,9 +17,15 @@ from traffic_env import TrafficIntersectionEnv
 
 app = FastAPI(title="Traffic Signal RL API", version="1.0.0")
 
+# Get CORS origins from environment variable or use defaults for local dev
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5173,http://localhost:3000"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -194,5 +201,6 @@ def reset_environments():
 
 
 if __name__ == "__main__":
-    print("Starting API server on port 8000...")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    print(f"Starting API server on port {port}...")
+    uvicorn.run(app, host="0.0.0.0", port=port)
