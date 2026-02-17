@@ -1,0 +1,20 @@
+[
+  {
+    "ns_rate": 0.12,
+    "ew_rate": 0.48,
+    "visibility": 0.45,
+    "fast_car_prob": 0.18
+  },
+  {
+    "ns_rate": 0.06,
+    "ew_rate": 0.5,
+    "visibility": 0.4,
+    "fast_car_prob": 0.16
+  },
+  {
+    "ns_rate": 0.15,
+    "ew_rate": 0.35,
+    "visibility": 0.5,
+    "fast_car_prob": 0.15
+  }
+]
