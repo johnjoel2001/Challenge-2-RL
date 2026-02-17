@@ -70,6 +70,8 @@ python plot_performance.py
 # Start API server (for frontend)
 python api_server.py
 # Runs on http://localhost:8000
+# Loads outputs/ppo_baseline.zip and outputs/ppo_mitigated.zip by default
+# Override with env vars: BASELINE_MODEL_PATH and FAIR_MODEL_PATH
 ```
 
 ### Frontend (Interactive Demo)
@@ -216,6 +218,13 @@ Returns: {"status": "reset", "cleared_sessions": true}
 ```
 
 Each episode gets a unique `episode_id` to enable concurrent clients without interference. Sessions are automatically cleaned up when episodes complete.
+
+**Configuration (Environment Variables):**
+
+- `BASELINE_MODEL_PATH` - Path to baseline model (default: `outputs/ppo_baseline.zip`)
+- `FAIR_MODEL_PATH` - Path to fair/mitigated model (default: `outputs/ppo_mitigated.zip`)
+- `ALLOWED_ORIGINS` - Comma-separated CORS origins (default: `http://localhost:5173,http://localhost:3000`)
+- `PORT` - Server port (default: `8000`)
 
 Frontend calls these endpoints in [`useModelBasedSim.js`](react-demo/src/hooks/useModelBasedSim.js) to run the simulation in real-time.
 

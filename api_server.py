@@ -35,14 +35,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load models at startup
+# Load models at startup (configurable via environment variables)
+BASELINE_MODEL_PATH = os.getenv("BASELINE_MODEL_PATH", "outputs/ppo_baseline.zip")
+FAIR_MODEL_PATH = os.getenv("FAIR_MODEL_PATH", "outputs/ppo_mitigated.zip")
+
 try:
-    baseline_model = PPO.load("outputs/ppo_baseline_v2.zip")
-    fair_model = PPO.load("outputs/ppo_mitigated_v2.zip")
-    print("Models loaded successfully")
+    baseline_model = PPO.load(BASELINE_MODEL_PATH)
+    print(f"Baseline model loaded from {BASELINE_MODEL_PATH}")
 except Exception as e:
-    print(f"Warning: Could not load models - {e}")
+    print(f"Warning: Could not load baseline model from {BASELINE_MODEL_PATH} - {e}")
     baseline_model = None
+
+try:
+    fair_model = PPO.load(FAIR_MODEL_PATH)
+    print(f"Fair model loaded from {FAIR_MODEL_PATH}")
+except Exception as e:
+    print(f"Warning: Could not load fair model from {FAIR_MODEL_PATH} - {e}")
     fair_model = None
 
 # Session storage: maps episode_id to (env, agent_type, model) tuples
