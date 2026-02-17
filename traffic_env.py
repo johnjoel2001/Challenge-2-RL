@@ -1,3 +1,7 @@
+""" 
+Traffic intersection environment for RL agents to control signal timing.
+Supports fairness penalties, safety constraints, and curriculum learning via scenario pools.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
@@ -9,6 +13,7 @@ import numpy as np
 
 @dataclass
 class TrafficScenario:
+    """Parameters defining a traffic scenario (arrival rates, visibility, fast cars)"""
     ns_rate: float
     ew_rate: float
     visibility: float
@@ -16,6 +21,12 @@ class TrafficScenario:
 
 
 class TrafficIntersectionEnv(gym.Env):
+    """
+    Gym environment for a 4-way traffic intersection with 2 signal phases (EW and NS).
+    
+    The agent controls signal switching to maximize throughput while balancing fairness
+    between directions and avoiding safety violations from poor timing decisions.
+    """
     metadata = {"render_modes": []}
 
     def __init__(
@@ -57,6 +68,7 @@ class TrafficIntersectionEnv(gym.Env):
         self.scenario_pool_prob = scenario_pool_prob
         self.rng = np.random.default_rng(seed)
 
+        # Action: 0 = EW green, 1 = NS green
         self.action_space = gym.spaces.Discrete(2)
         self.observation_space = gym.spaces.Box(
             low=0.0,
@@ -83,10 +95,12 @@ class TrafficIntersectionEnv(gym.Env):
         self.last_scenario: Optional[TrafficScenario] = None
 
     def set_scenario_pool(self, scenarios: List[Dict[str, float]], prob: float) -> None:
+        """Update the hard case scenario pool for curriculum learning"""
         self.scenario_pool = scenarios
         self.scenario_pool_prob = prob
 
     def _sample_scenario(self) -> TrafficScenario:
+        """Sample a scenario either from the hard case pool or uniformly from ranges"""
         if self.scenario_pool and self.rng.random() < self.scenario_pool_prob:
             scenario = self.rng.choice(self.scenario_pool)
             return TrafficScenario(**scenario)
@@ -98,6 +112,7 @@ class TrafficIntersectionEnv(gym.Env):
         )
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+        """Reset environment to initial state with a new traffic scenario"""
         super().reset(seed=seed)
         if seed is not None:
             self.rng = np.random.default_rng(seed)
@@ -108,11 +123,13 @@ class TrafficIntersectionEnv(gym.Env):
         return obs, info
 
     def step(self, action: int):
+        """Execute one timestep: signal control, traffic dynamics, and reward calculation"""
         assert self.last_scenario is not None
         self.step_count += 1
 
         action = int(action)
         switched = action != self.phase
+        # Penalize switching too quickly (< min_green_steps)
         unsafe_switch = 1 if switched and self.time_since_switch < self.min_green_steps else 0
 
         if switched:
@@ -126,8 +143,10 @@ class TrafficIntersectionEnv(gym.Env):
 
         self._update_waits()
 
+        # Check for fast approaching cars that reduce reaction time
         fast_car_ns = self.rng.random() < self.last_scenario.fast_car_prob
         fast_car_ew = self.rng.random() < self.last_scenario.fast_car_prob
+        # Time-to-collision (TTC) depends on visibility and car speed
         ttc_ns = self.last_scenario.visibility * 3.5 if fast_car_ns else None
         ttc_ew = self.last_scenario.visibility * 3.5 if fast_car_ew else None
 
@@ -138,6 +157,7 @@ class TrafficIntersectionEnv(gym.Env):
         if collision:
             self.collisions += 1
 
+        # Calculate fairness metrics
         avg_wait_ns = (self.cum_wait_n + self.cum_wait_s) / max(1, self.step_count)
         avg_wait_ew = (self.cum_wait_e + self.cum_wait_w) / max(1, self.step_count)
         fairness_gap = abs(avg_wait_ns - avg_wait_ew)
@@ -169,6 +189,7 @@ class TrafficIntersectionEnv(gym.Env):
         return obs, reward, terminated, truncated, info
 
     def _spawn_traffic(self) -> None:
+        """Spawn new cars in each direction based on arrival rates"""
         assert self.last_scenario is not None
         if self.rng.random() < self.last_scenario.ns_rate:
             self.queue_n = min(self.max_queue, self.queue_n + 1)
@@ -180,7 +201,9 @@ class TrafficIntersectionEnv(gym.Env):
             self.queue_w = min(self.max_queue, self.queue_w + 1)
 
     def _serve_traffic(self) -> int:
+        """Move cars through intersection based on current green phase and visibility"""
         assert self.last_scenario is not None
+        # Poor visibility reduces throughput
         flow = max(1, int(round(self.max_flow * self.last_scenario.visibility)))
         served = 0
         if self.phase == 0:
@@ -202,6 +225,7 @@ class TrafficIntersectionEnv(gym.Env):
         self.cum_wait_w += self.queue_w
 
     def _get_obs(self) -> np.ndarray:
+        """Build observation vector with queue lengths, phase state, and scenario params"""
         assert self.last_scenario is not None
         obs = np.array(
             [

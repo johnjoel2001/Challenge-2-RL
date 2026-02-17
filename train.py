@@ -1,3 +1,7 @@
+"""
+Training script for PPO agents on traffic intersection control.
+Supports baseline (reward hacking) and mitigated (fair) configurations.
+"""
 import argparse
 import json
 import os
@@ -10,6 +14,7 @@ from traffic_env import TrafficIntersectionEnv
 
 
 def load_scenarios(path: Optional[str]) -> List[Dict[str, float]]:
+    """Load hard case scenarios from JSON for curriculum learning"""
     if not path:
         return []
     with open(path, "r", encoding="utf-8") as handle:
@@ -24,6 +29,7 @@ def build_env(
     safety_weight: float,
     seed: Optional[int],
 ) -> TrafficIntersectionEnv:
+    """Create environment with specified hyperparameters"""
     return TrafficIntersectionEnv(
         ns_rate_range=(0.05, 0.15),
         ew_rate_range=(0.28, 0.5),
@@ -38,6 +44,10 @@ def build_env(
 
 
 def resolve_hyperparams(args: argparse.Namespace) -> Dict[str, Any]:
+    """
+    Set hyperparameters based on mode (baseline vs mitigated).
+    Baseline ignores fairness, mitigated includes fairness penalties and curriculum learning.
+    """
     if args.mode == "baseline":
         defaults = {
             "fairness_weight": 0.0,
@@ -69,6 +79,7 @@ def resolve_hyperparams(args: argparse.Namespace) -> Dict[str, Any]:
 
 
 def main() -> None:
+    """Parse arguments, configure environment, and train PPO model"""
     parser = argparse.ArgumentParser(description="Train PPO on the traffic intersection.")
     parser.add_argument("--mode", choices=["baseline", "mitigated"], default="baseline")
     parser.add_argument("--timesteps", type=int, default=200_000)
@@ -84,6 +95,7 @@ def main() -> None:
     params = resolve_hyperparams(args)
     scenarios = load_scenarios(args.hard_cases)
 
+    # Factory function for creating identical envs in the vectorized wrapper
     def env_factory():
         env = build_env(
             scenarios=scenarios,
@@ -95,6 +107,7 @@ def main() -> None:
         env.ttc_threshold = params["ttc_threshold"]
         return env
 
+    # Use 4 parallel envs to speed up training
     vec_env = make_vec_env(env_factory, n_envs=4)
 
     model = PPO("MlpPolicy", vec_env, verbose=1, n_steps=512, batch_size=256)

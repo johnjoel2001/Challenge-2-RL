@@ -1,11 +1,14 @@
-"""Generate performance comparison graphs for baseline vs mitigated agents."""
-
+"""
+Generate comparison charts showing baseline vs mitigated agent performance.
+Creates bar charts and improvement metrics to visualize the reward hacking problem.
+"""
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Evaluation results (50 episodes each)
+# Results from evaluation runs (50 episodes each)
+# Format: (baseline_value, mitigated_value)
 metrics = {
     'Avg Reward': (120.76, 179.72),
     'NS Avg Wait': (9.51, 1.81),
@@ -22,7 +25,7 @@ width = 0.35
 
 fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
-# --- Bar Chart ---
+# Bar chart comparing raw metrics
 ax1 = axes[0]
 bars1 = ax1.bar(x - width/2, baseline_vals, width, label='Baseline (Reward Hacking)', color='#e74c3c', edgecolor='#c0392b', linewidth=1.2)
 bars2 = ax1.bar(x + width/2, mitigated_vals, width, label='Mitigated (Fair Agent)', color='#27ae60', edgecolor='#1e8449', linewidth=1.2)
@@ -34,7 +37,7 @@ ax1.set_xticklabels(labels, fontsize=11)
 ax1.legend(fontsize=11)
 ax1.grid(axis='y', alpha=0.3)
 
-# Add value labels on bars
+# Label bars with actual values
 for bar in bars1:
     h = bar.get_height()
     ax1.annotate(f'{h:.1f}', xy=(bar.get_x() + bar.get_width()/2, h),
@@ -44,7 +47,7 @@ for bar in bars2:
     ax1.annotate(f'{h:.1f}', xy=(bar.get_x() + bar.get_width()/2, h),
                  xytext=(0, 5), textcoords='offset points', ha='center', fontsize=10, fontweight='bold', color='#1e8449')
 
-# --- Improvement Chart ---
+# Percentage improvement chart
 ax2 = axes[1]
 improvements = {
     'Reward': ((179.72 - 120.76) / 120.76) * 100,
@@ -69,7 +72,7 @@ plt.tight_layout(pad=3)
 plt.savefig('outputs/performance_comparison.png', dpi=150, bbox_inches='tight')
 print("Saved: outputs/performance_comparison.png")
 
-# --- Wait Time Comparison (separate figure) ---
+# Separate figure focusing on wait time fairness
 fig2, ax3 = plt.subplots(figsize=(8, 5))
 
 categories = ['North-South', 'East-West']
@@ -96,7 +99,7 @@ for bar in b2:
     ax3.annotate(f'{h:.1f}', xy=(bar.get_x() + bar.get_width()/2, h),
                  xytext=(0, 5), textcoords='offset points', ha='center', fontsize=12, fontweight='bold', color='#1e8449')
 
-# Add annotation showing unfairness
+# Annotate the unfair wait time
 ax3.annotate('NS starved!\nWait = 9.51', xy=(0 - width/2, 9.51), xytext=(-0.5, 7),
              fontsize=10, color='#e74c3c', fontweight='bold',
              arrowprops=dict(arrowstyle='->', color='#e74c3c'))

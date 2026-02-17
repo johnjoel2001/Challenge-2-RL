@@ -1,0 +1,718 @@
+/* TrafficSimulation.css
+ * Visual design and styling generated with assistance from Claude Sonnet 4.5
+ */
+
+@keyframes fadeInUp3D {
+  from {
+    opacity: 0;
+    transform: perspective(1000px) translateY(40px) rotateX(-15deg) translateZ(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1000px) translateY(0) rotateX(0deg) translateZ(0px);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.ts-root {
+  background: #000;
+  min-height: calc(100vh - 44px);
+  padding: 64px max(32px, calc((100vw - 1200px) / 2)) 96px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.ts-root::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 600px;
+  background: radial-gradient(ellipse at top, rgba(10, 132, 255, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+  animation: fadeIn 1s ease-out;
+}
+
+.ts-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Header */
+.ts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 48px;
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ts-title {
+  font-size: 56px;
+  font-weight: 700;
+  color: #f5f5f7;
+  letter-spacing: -2px;
+  margin-bottom: 12px;
+  line-height: 1.05;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ts-subtitle {
+  font-size: 21px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+  letter-spacing: -0.3px;
+  line-height: 1.4;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+
+.ts-controls {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Liquid Glass Buttons */
+.ts-btn {
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  letter-spacing: -0.3px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.ts-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ts-btn::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: -1;
+}
+
+.ts-btn:hover::before {
+  opacity: 1;
+}
+
+.ts-btn:hover::after {
+  opacity: 1;
+  animation: shimmer 2s infinite;
+}
+
+.ts-btn:hover {
+  transform: translateY(-2px);
+}
+
+.ts-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.ts-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.ts-btn:disabled::before,
+.ts-btn:disabled::after {
+  opacity: 0;
+}
+
+.ts-btn-primary {
+  background: linear-gradient(135deg, rgba(10, 132, 255, 0.95) 0%, rgba(0, 102, 204, 0.9) 100%);
+  color: #fff;
+  box-shadow: 
+    0 4px 16px rgba(10, 132, 255, 0.25),
+    0 8px 32px rgba(10, 132, 255, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ts-btn-primary:hover {
+  box-shadow: 
+    0 6px 24px rgba(10, 132, 255, 0.35),
+    0 12px 48px rgba(10, 132, 255, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.ts-btn-muted {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.ts-btn-ghost {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ts-btn-ghost:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Progress */
+.ts-progress-track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  position: relative;
+  animation: fadeIn 0.8s ease-out 0.2s both;
+}
+
+.ts-progress-track::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+  animation: shimmer 3s infinite;
+}
+
+.ts-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0a84ff 0%, #30d158 100%);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 3px;
+  box-shadow: 
+    0 0 20px rgba(10, 132, 255, 0.5),
+    0 2px 8px rgba(10, 132, 255, 0.3);
+  position: relative;
+}
+
+.ts-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+  border-radius: 3px 3px 0 0;
+}
+
+.ts-step-label {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  margin-bottom: 48px;
+  letter-spacing: -0.2px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  animation: fadeIn 0.8s ease-out 0.3s both;
+}
+
+/* Layout - 3D Grid */
+.ts-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 48px;
+  margin-bottom: 80px;
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+  perspective: 2000px;
+  perspective-origin: center center;
+}
+
+/* Canvas - Liquid Glass Effect with 3D */
+.ts-canvas-wrap {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-radius: 28px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(40px) saturate(1.5);
+  -webkit-backdrop-filter: blur(40px) saturate(1.5);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.5) inset;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  transform-style: preserve-3d;
+  transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+  animation: fadeInUp3D 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+}
+
+.ts-canvas-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(10, 132, 255, 0.08) 0%, transparent 50%);
+  pointer-events: none;
+  opacity: 0.7;
+  transition: opacity 0.5s ease;
+  z-index: 1;
+}
+
+.ts-canvas-wrap:hover {
+  transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(-8px) translateZ(20px);
+  box-shadow: 
+    0 24px 64px rgba(0, 0, 0, 0.6),
+    0 1px 0 rgba(255, 255, 255, 0.15) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.5) inset;
+}
+
+.ts-canvas-wrap:hover::before {
+  opacity: 1;
+}
+
+.ts-canvas-wrap::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(135deg, rgba(10, 132, 255, 0.15), transparent 30%, transparent 70%, rgba(48, 209, 88, 0.15));
+  border-radius: 28px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ts-canvas-wrap:hover::after {
+  opacity: 1;
+}
+
+.ts-signal-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 32px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ts-signal-label {
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+}
+
+.ts-signal-divider {
+  width: 1px;
+  height: 18px;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.15), transparent);
+  margin: 0 8px;
+}
+
+.ts-signal-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ts-signal-dot::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.2;
+  animation: float 3s ease-in-out infinite;
+}
+
+.ts-signal-green {
+  background: #30d158;
+  box-shadow: 
+    0 0 20px rgba(48, 209, 88, 0.7),
+    0 0 40px rgba(48, 209, 88, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5);
+  color: #30d158;
+}
+
+.ts-signal-red {
+  background: #ff453a;
+  box-shadow: 
+    0 0 20px rgba(255, 69, 58, 0.7),
+    0 0 40px rgba(255, 69, 58, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  color: #ff453a;
+}
+
+.ts-canvas {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 0 0 28px 28px;
+}
+/* Sidebar - Liquid Glass Cards with 3D */
+.ts-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  transform-style: preserve-3d;
+}
+
+.ts-sidebar-section {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-radius: 24px;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(40px) saturate(1.5);
+  -webkit-backdrop-filter: blur(40px) saturate(1.5);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.5) inset;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transform: perspective(1000px) rotateX(0deg) translateZ(0px);
+}
+
+.ts-sidebar-section:nth-child(1) {
+  animation: fadeInUp3D 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+}
+
+.ts-sidebar-section:nth-child(2) {
+  animation: fadeInUp3D 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+}
+
+.ts-sidebar-section:nth-child(3) {
+  animation: fadeInUp3D 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.8s both;
+}
+
+.ts-sidebar-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  z-index: 1;
+}
+
+.ts-sidebar-section::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(135deg, rgba(10, 132, 255, 0.08), transparent 50%);
+  border-radius: 24px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ts-sidebar-section:hover::after {
+  opacity: 1;
+}
+
+.ts-sidebar-section:hover {
+  transform: perspective(1000px) rotateX(3deg) translateY(-6px) translateZ(15px);
+  box-shadow: 
+    0 16px 40px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.5) inset;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.ts-section-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 700;
+  margin-bottom: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+}
+
+.ts-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ts-metric:hover {
+  padding-left: 4px;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.ts-metric:last-child {
+  border-bottom: none;
+}
+
+.ts-metric-label {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
+  letter-spacing: -0.2px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+}
+
+.ts-metric-value {
+  font-size: 26px;
+  font-weight: 600;
+  color: #f5f5f7;
+  letter-spacing: -0.5px;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.ts-accent-blue {
+  color: #0a84ff;
+  text-shadow: 0 0 20px rgba(10, 132, 255, 0.4);
+}
+
+.ts-accent-orange {
+  color: #ff9f0a;
+  text-shadow: 0 0 20px rgba(255, 159, 10, 0.4);
+}
+
+.ts-accent-green {
+  color: #30d158;
+  text-shadow: 0 0 20px rgba(48, 209, 88, 0.4);
+}
+
+.ts-accent-red {
+  color: #ff453a;
+  text-shadow: 0 0 20px rgba(255, 69, 58, 0.4);
+}
+
+/* Explanation Section with 3D */
+.ts-explanation {
+  padding-top: 64px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+  transform-style: preserve-3d;
+}
+
+.ts-explanation-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 40px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+}
+
+.ts-explanation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  perspective: 2000px;
+  perspective-origin: center center;
+}
+
+.ts-explanation-card {
+  padding: 36px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(40px) saturate(1.5);
+  -webkit-backdrop-filter: blur(40px) saturate(1.5);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transform: perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px);
+}
+
+.ts-explanation-card:nth-child(1) {
+  animation: fadeInUp3D 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+}
+
+.ts-explanation-card:nth-child(1):hover {
+  transform: perspective(1000px) rotateX(4deg) rotateY(-3deg) translateY(-12px) translateZ(25px);
+}
+
+.ts-explanation-card:nth-child(2) {
+  animation: fadeInUp3D 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.8s both;
+}
+
+.ts-explanation-card:nth-child(2):hover {
+  transform: perspective(1000px) rotateX(4deg) rotateY(0deg) translateY(-12px) translateZ(25px);
+}
+
+.ts-explanation-card:nth-child(3) {
+  animation: fadeInUp3D 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
+}
+
+.ts-explanation-card:nth-child(3):hover {
+  transform: perspective(1000px) rotateX(4deg) rotateY(3deg) translateY(-12px) translateZ(25px);
+}
+
+.ts-explanation-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  z-index: 1;
+}
+
+.ts-explanation-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(135deg, rgba(10, 132, 255, 0.08), transparent 50%);
+  border-radius: 24px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ts-explanation-card:hover::after {
+  opacity: 1;
+}
+
+.ts-explanation-card:hover {
+  box-shadow: 
+    0 24px 64px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.12) inset;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.ts-card-heading {
+  font-size: 19px;
+  font-weight: 600;
+  color: #f5f5f7;
+  margin-bottom: 14px;
+  letter-spacing: -0.4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+
+.ts-explanation-card p {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  letter-spacing: -0.2px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .ts-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .ts-sidebar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .ts-explanation-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .ts-root {
+    padding: 40px 20px 64px;
+  }
+
+  .ts-header {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .ts-title {
+    font-size: 40px;
+    letter-spacing: -1.5px;
+  }
+
+  .ts-subtitle {
+    font-size: 17px;
+  }
+
+  .ts-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .ts-explanation-grid {
+    gap: 20px;
+  }
+
+  .ts-explanation-card {
+    padding: 28px;
+  }
+}
